@@ -1,0 +1,123 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:ios)
+
+platform :ios do
+  #这里是指令描述
+  desc "Description of what the lane does"
+
+  lane :debug do |options|
+
+    # add actions here: https://docs.fastlane.tools/actions
+    #automatic_code_signing和gym都是fastlane命令 可以查阅相关文档
+    #指定签名参数
+    automatic_code_signing(
+    #路径
+        path: "项目名称.xcodeproj",
+    #证书
+        code_sign_identity: "Apple Development: xxxx (xxxx)",
+        #描述文件 Mac上描述文件路径 ~/Library/MobileDevice/Provisioning Profiles
+        profile_name: "xxxxxx"
+    )
+
+    #指定构建参数
+    gym(
+        #
+        scheme: "要打包的target项目名称",
+        workspace: "项目名称.xcworkspace",
+        clean: true,
+        configuration: "Debug",
+        export_method: "development",
+        output_name: options[:ipa_name],
+        output_directory: "#{options[:output_path]}",
+        export_xcargs: "-allowProvisioningUpdates",
+        archive_path: "#{options[:output_path]}/#{options[:ipa_name]}"
+    )
+  end
+
+ lane :release do |options|
+
+    # add actions here: https://docs.fastlane.tools/actions
+    #automatic_code_signing和gym都是fastlane命令 可以查阅相关文档
+    #指定签名参数
+    automatic_code_signing(
+    #路径
+        path: "项目名称.xcodeproj",
+    #证书
+        code_sign_identity: "Apple Distribution: xxxxxx (xxxxx)",
+        #描述文件 Mac上描述文件路径 ~/Library/MobileDevice/Provisioning Profiles
+        profile_name: "xxxxxx"
+    )
+
+    #指定构建参数
+    gym(
+        scheme: "要打包的target项目名称",
+        workspace: "项目名称.xcworkspace",
+        clean: true,
+        configuration: "Release",
+        export_method: "ad-hoc",
+        output_name: options[:ipa_name],
+        output_directory: "#{options[:output_path]}",
+        export_xcargs: "-allowProvisioningUpdates",
+        archive_path: "#{options[:output_path]}/#{options[:ipa_name]}"
+    )
+  end
+
+lane :appStore do |options|
+
+    # add actions here: https://docs.fastlane.tools/actions
+
+    puts "以app-store 方式打包"
+
+    #指定构建参数
+
+    #自动增加build版本号
+    increment_build_number
+
+    gym(
+        scheme: "要打包的target项目名称",
+        workspace: "项目名称.xcworkspace",
+        clean: true,
+        configuration: "Release",
+        output_name: options[:ipa_name],
+        output_directory: "#{options[:output_path]}",
+        export_xcargs: "-allowProvisioningUpdates",
+        export_options: {
+                method: "app-store",
+                provisioningProfiles: {
+                        # bundleid，打包用的证书名字,这里也可以采用参数传递,看个人喜好吧
+                        "com.you.bundleIdentifier": "your_appStore"
+                }
+
+        }
+    )
+    puts "上传 ipa 包到 iTunes connect"
+    #上传AppStore
+    deliver(
+    #跳过截图上传
+    skip_screenshots: true,
+    #跳过元数据上传
+    skip_metadata: true,
+    #跳过审核直接上传
+    force: true
+    )
+
+  end
+
+
+end
+
+
